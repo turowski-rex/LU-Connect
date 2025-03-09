@@ -1,17 +1,21 @@
-class WebServer(NetworkApplication):
+import socket
+import threading
 
-    def __init__(self, args):
-        print('Web Server starting on port: %i...' % args.port)
+class chatServer:
+    '''WebServer architecture adapted from Networks and Systems module 
+    coursework material, including socket and request programming'''
+    def __init__(self, host = '127.0.0.1', port = 8080, maxConnect = 3): # init. the server with local host and default port, and max. number of connected ppl. for semaphore
         
-        # 1. Create a TCP socket 
-        serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # TCP socket + bind copied
+        serverSocket.bind((host, port))
+
+        semaphore = threading.Semaphore(maxConnect) # semaphore limits connected threads to 3
+        clients = [] # connected clients
+        waitQueue = [] # clients waiting in queue
         
-        # 2. Bind the TCP socket to server address and server port
-        serverSocket.bind(("", args.port))
-        
-        # 3. Continuously listen for connections to server socket
-        serverSocket.listen(100)
-        print("Server listening on port", args.port)
+        serverSocket.listen(100) # listening to connections
+
+        print(f"Chat Server started on {host}:{port}. Max connections: {maxConnect}")
         
         while True:
             # 4. Accept incoming connections
