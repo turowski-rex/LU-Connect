@@ -28,6 +28,11 @@ class chatServer:
         # Close server socket (this would only happen if the loop was broken, which it isn't in this example)
         serverSocket.close()
 
+        ''' UNIT TEST #1 = check if server runs from terminal
+            Success - expected output printed:
+            Chat Server started on 127.0.0.1:8080. Max connections: 3
+        '''
+"""
     def handleRequest(self, connectionSocket):
         try:
             # 1. Receive request message from the client
@@ -58,4 +63,9 @@ class chatServer:
 
         finally:
             # Close the connection socket
-            connectionSocket.close()
+            connectionSocket.close()"
+            """
+
+if __name__ =="__main__":
+    server = chatServer()
+    server.__init__()
