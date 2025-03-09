@@ -21,7 +21,7 @@ class chatServer:
             Success - expected output printed:
             Chat Server started on 127.0.0.1:8080. Max connections: 3
         '''
-        
+
         while True:
             # Accept incoming connections
             connectionSocket, addr = serverSocket.accept() # new client connection
@@ -37,10 +37,11 @@ class chatServer:
                 semaphore.acquire()  # .acquire the semaphore (decrement the connection counter - to prevent race conditions)
                 clients.append((serverSocket, addr))  # client added to the active list
                 print(f"Connection accepted. Active connections: {len(clients)}")
-                serverSocket.send("Welcome to the chat server!".encode())
+                serverSocket.send("Welcome to the chat server!".encode()) # .encode for error handling
             # create a new thread to handle each client request
             threading.Thread(target=self.handleRequest, args=(connectionSocket, addr)).start()
-
+        '''UNIT TEST #2 = checking connection of client to server
+        Part success, part fail - connection achieved but server crashed immediately'''
 """
     def handleRequest(self, connectionSocket):
         try:
