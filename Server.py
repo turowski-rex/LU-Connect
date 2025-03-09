@@ -16,22 +16,31 @@ class chatServer:
         serverSocket.listen(100) # listening to connections
 
         print(f"Chat Server started on {host}:{port}. Max connections: {maxConnect}")
-        
-        while True:
-            # 4. Accept incoming connections
-            connectionSocket, addr = serverSocket.accept()
-            print(f"Connection established with {addr}")
-            
-            # 5. Create a new thread to handle each client request
-            threading.Thread(target=self.handleRequest, args=(connectionSocket,)).start()
-
-        # Close server socket (this would only happen if the loop was broken, which it isn't in this example)
-        serverSocket.close()
 
         ''' UNIT TEST #1 = check if server runs from terminal
             Success - expected output printed:
             Chat Server started on 127.0.0.1:8080. Max connections: 3
         '''
+        
+        while True:
+            # Accept incoming connections
+            connectionSocket, addr = serverSocket.accept() # new client connection
+            print(f"Connection established with {addr}")
+            if len(clients) >= maxConnect:
+                # if the maximum number of connections is reached, ->
+                waitQueue.append((connectionSocket, addr))  # -> add client to the wait queue
+                print(f"Connection limit reached. {addr} added to waiting queue.")
+                connectionSocket.send("Server is full. You are in the waiting queue.".encode())  # notify the client
+
+            else:
+                # if there is room for more connections, allow the client to connect
+                semaphore.acquire()  # .acquire the semaphore (decrement the connection counter - to prevent race conditions)
+                clients.append((serverSocket, addr))  # client added to the active list
+                print(f"Connection accepted. Active connections: {len(clients)}")
+                serverSocket.send("Welcome to the chat server!".encode())
+            # create a new thread to handle each client request
+            threading.Thread(target=self.handleRequest, args=(connectionSocket, addr)).start()
+
 """
     def handleRequest(self, connectionSocket):
         try:
