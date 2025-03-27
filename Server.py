@@ -1,6 +1,8 @@
 import socket
 import threading
 import datetime
+import sqlite3
+import bcrypt
 
 class chatServer:
     '''WebServer architecture adapted from Networks and Systems module 
@@ -12,6 +14,8 @@ class chatServer:
 
         self.serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # TCP socket + bind copied
         self.serverSocket.bind((self.host, self.port))
+
+        initDB()
 
         self.semaphore = threading.Semaphore(maxConnect) # semaphore limits connected threads to 3
         self.clients = [] # connected clients
@@ -51,7 +55,7 @@ class chatServer:
         '''UNIT TEST #2 = checking connection of client to server
         Part success, part fail - connection achieved but server crashed immediately'''
 
-# Need to handle request for server not to crash
+    # Need to handle request for server not to crash
     def handleRequest(self, connectionSocket, addr):
         # Ref: https://www.geeksforgeeks.org/simple-chat-room-using-python/
         while True:
@@ -62,6 +66,8 @@ class chatServer:
                 print(f"Received from {addr}: {message}")
                 self.broadcast(f"{addr}: {message}", connectionSocket)# broadcasting mesage to all cients
 
+            except ConnectionResetError: # when client window is closed
+                pass
             except Exception as e:
                 print(f"Error handling request {addr}: {e}") # error handling
                 break
@@ -105,7 +111,18 @@ class chatServer:
             
             Test #6 
             Just had to swap lines in Client = works'''
-  
+
+def initDB():
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            username TEXT PRIMARY KEY,
+            passwordHash TEXT NOT NULL
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
 if __name__ =="__main__":
     server = chatServer()
