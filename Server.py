@@ -42,40 +42,27 @@ class chatServer:
             threading.Thread(target=self.handleRequest, args=(connectionSocket, addr)).start()
         '''UNIT TEST #2 = checking connection of client to server
         Part success, part fail - connection achieved but server crashed immediately'''
-"""
-    def handleRequest(self, connectionSocket):
-        try:
-            # 1. Receive request message from the client
-            message = connectionSocket.recv(MAX_DATA_RECV).decode()
 
-            # 2. Extract the path of the requested object from the message (second part of the HTTP header)
-            filename = message.split()[1]
+# Need to handle request for server not to crash
+    def handleRequest(self, connectionSocket, addr):
+        # Ref: https://www.geeksforgeeks.org/simple-chat-room-using-python/
+        while True:
+            try:
+                message = connectionSocket.recv(1024).decode() # recv message from client (1Kb)
+                if not message:
+                    break  # if message is empty, the client has disconnected
+                print(f"Received from {addr}: {message}")
 
-            # 3. Read the corresponding file from disk
-            with open(filename[1:], 'r') as f:  # Skip the leading '/'
-                content = f.read()
-
-            # 4. Create the HTTP response
-            response = 'HTTP/1.1 200 OK\r\n\r\n'
-            response += content
-
-            # 5. Send the content of the file to the socket
-            connectionSocket.send(response.encode())
-
-        except IOError:
-            # Handle file not found error
-            error_response = "HTTP/1.1 404 Not Found\r\n\r\n"
-            error_response += "<html><head></head><body><h1>404 Not Found</h1></body></html>\r\n"
-            connectionSocket.send(error_response.encode())
-
-        except Exception as e:
-            print(f"Error handling request: {e}")
-
-        finally:
-            # Close the connection socket
-            connectionSocket.close()"
-            """
-
+            except Exception as e:
+                print(f"Error handling request {addr}: {e}") # error handling
+                break
+                
+        # client disconnected
+        print(f"Client {addr} disconnected.")
+        self.clients.remove((connectionSocket, addr))  # Remove the client from the active clients list
+        self.semaphore.release()  # Release the semaphore (increment the connection counter)
+        connectionSocket.close()  # Close the client socket
+  
 if __name__ =="__main__":
     server = chatServer()
     server.__init__()
