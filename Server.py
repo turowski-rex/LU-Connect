@@ -29,7 +29,7 @@ class chatServer:
             # Accept incoming connections
             connectionSocket, addr = self.serverSocket.accept() # new client connection
             print(f"Connection established with {addr}")
-            if len(self.clients) >= maxConnect:
+            if len(self.clients) >= self.maxConnect:
                 # if the maximum number of connections is reached, ->
                 self.waitQueue.append((connectionSocket, addr))  # -> add client to the wait queue
                 print(f"Connection limit reached. {addr} added to waiting queue.")
@@ -55,6 +55,7 @@ class chatServer:
                 if not message:
                     break  # if message is empty, the client has disconnected
                 print(f"Received from {addr}: {message}")
+                self.broadcast(f"{addr}: {message}", connectionSocket)# broadcasting mesage to all cients
 
             except Exception as e:
                 print(f"Error handling request {addr}: {e}") # error handling
@@ -79,7 +80,20 @@ class chatServer:
             print(f"Client {addr} moved from waiting queue to active connections.")
             connectionSocket.send("Welcome to the chat server!".encode())
             threading.Thread(target=self.handleRequest, args=(connectionSocket, addr)).start() # Start new thread to handle client
+
+            '''Test #4 
+            Connection and sending message to server works'''
+
+    def broadcast(self, message, senderSocket):
+        for client, _ in self.clients:   # broadcast to all clients except sender
+
+            if client != senderSocket:  # Do not send the message back to the sender
+                try:
+                    client.send(message.encode())  # Send message to clients
+                except Exception as e:
+                    print(f"Error broadcasting message: {e}") #error handling
   
+
 if __name__ =="__main__":
     server = chatServer()
     server.__init__()
