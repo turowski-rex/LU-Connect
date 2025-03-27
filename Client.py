@@ -2,11 +2,15 @@ import socket
 
 class chatClient:
     def __init__(self, host='127.0.0.1', port=8080): # init client with host and port of chatServer
-        connectionSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # TCP socket
-        connectionSocket.connect((host, port))  # cnnect to server
-        print("Connected to the chat server.")
+        self.host = host
+        self.port = port
 
-    def send_messages(self):
+        self.connectionSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # TCP socket
+        self.connectionSocket.connect((self.host, self.port))  # cnnect to server
+        print("Connected to the chat server.")
+        self.sendMessages()
+
+    def sendMessages(self):
         # Ref: https://www.geeksforgeeks.org/simple-chat-room-using-python/
         # continuously send messages to server
         while True:
