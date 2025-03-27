@@ -24,7 +24,10 @@ class chatServer:
             Success - expected output printed:
             Chat Server started on 127.0.0.1:8080. Max connections: 3
         '''
+# Seperated server-runnig functions from __init__
+# Ref: https://stackoverflow.com/questions/23828264/how-to-make-a-simple-multithreaded-socket-server-in-python-that-remembers-client
 
+    def runServer(self):
         while True:
             # Accept incoming connections
             connectionSocket, addr = self.serverSocket.accept() # new client connection
@@ -41,8 +44,8 @@ class chatServer:
                 self.clients.append((connectionSocket, addr))  # client added to the active list
                 print(f"Connection accepted. Active connections: {len(self.clients)}")
                 connectionSocket.send("Welcome to the chat server!".encode()) # .encode for error handling
-            # create a new thread to handle each client request
-            threading.Thread(target=self.handleRequest, args=(connectionSocket, addr)).start()
+                # create a new thread to handle each client request
+                threading.Thread(target=self.handleRequest, args=(connectionSocket, addr)).start()
         '''UNIT TEST #2 = checking connection of client to server
         Part success, part fail - connection achieved but server crashed immediately'''
 
@@ -92,8 +95,11 @@ class chatServer:
                     client.send(message.encode())  # Send message to clients
                 except Exception as e:
                     print(f"Error broadcasting message: {e}") #error handling
+
+            '''Test #5
+            Sending messages doesn't work'''
   
 
 if __name__ =="__main__":
     server = chatServer()
-    server.__init__()
+    server.runServer()
