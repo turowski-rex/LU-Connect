@@ -10,8 +10,8 @@ class chatClient:
         self.connectionSocket.connect((self.host, self.port))  # cnnect to server
         print("Connected to the chat server.")
 
-        self.sendMessages()
         threading.Thread(target=self.receiveMessages).start() # start thread to receive
+        self.sendMessages()
 
     def sendMessages(self):
         # Ref: https://www.geeksforgeeks.org/simple-chat-room-using-python/

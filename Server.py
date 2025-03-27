@@ -10,7 +10,7 @@ class chatServer:
         self.maxConnect = maxConnect
 
         self.serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # TCP socket + bind copied
-        self.serverSocket.bind((host, port))
+        self.serverSocket.bind((self.host, self.port))
 
         self.semaphore = threading.Semaphore(maxConnect) # semaphore limits connected threads to 3
         self.clients = [] # connected clients
@@ -32,6 +32,7 @@ class chatServer:
             # Accept incoming connections
             connectionSocket, addr = self.serverSocket.accept() # new client connection
             print(f"Connection established with {addr}")
+
             if len(self.clients) >= self.maxConnect:
                 # if the maximum number of connections is reached, ->
                 self.waitQueue.append((connectionSocket, addr))  # -> add client to the wait queue
@@ -97,7 +98,10 @@ class chatServer:
                     print(f"Error broadcasting message: {e}") #error handling
 
             '''Test #5
-            Sending messages doesn't work'''
+            Sending messages doesn't work
+            
+            Test #6 
+            Just had to swap lines in Client = works'''
   
 
 if __name__ =="__main__":
