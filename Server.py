@@ -1,5 +1,6 @@
 import socket
 import threading
+import datetime
 
 class chatServer:
     '''WebServer architecture adapted from Networks and Systems module 
@@ -89,11 +90,13 @@ class chatServer:
             Connection and sending message to server works'''
 
     def broadcast(self, message, senderSocket):
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
         for client, _ in self.clients:   # broadcast to all clients except sender
 
             if client != senderSocket:  # Do not send the message back to the sender
                 try:
-                    client.send(message.encode())  # Send message to clients
+                    client.send(f"[{timestamp}] {message}".encode())  # Send message to clients
                 except Exception as e:
                     print(f"Error broadcasting message: {e}") #error handling
 
