@@ -36,8 +36,9 @@ class chatServer:
             # Accept incoming connections
             connectionSocket, addr = self.serverSocket.accept() # new client connection
             print(f"Connection established with {addr}")
+            activeConn = sum(1 for client in self.clients if client[0].fileno() != -1)
 
-            if len(self.clients) >= self.maxConnect:
+            if activeConn >= self.maxConnect:
                 # if the maximum number of connections is reached, ->
                 self.waitQueue.append((connectionSocket, addr))  # -> add client to the wait queue
                 print(f"Connection limit reached. {addr} added to waiting queue.")
@@ -82,18 +83,28 @@ class chatServer:
                 else:
                     self.broadcast(f"{addr}: {message}", connectionSocket) # broadcast to all clients
 
-            except ConnectionResetError: # when client window is closed
-                pass
+            except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError) as e:# when client window is closed
+                print(f"Client {addr} disconnected: {e}")
+                break
             except Exception as e:
                 print(f"Error handling request {addr}: {e}") # error handling
                 break
-                
+       
         # client disconnected
-        print(f"Client {addr} disconnected.")
-        self.clients.remove((connectionSocket, addr))# remove client from the active clients list
-        self.semaphore.release()  # Release semaphore (increment the connection counter)
-        self.checkQueue()         # check if clients are in queue
-        connectionSocket.close()  # Close client socket
+        try:
+            with threading.Lock():  # Prevent race conditions
+                if (connectionSocket, addr) in self.clients:
+                    self.clients.remove((connectionSocket, addr))
+                    self.semaphore.release()
+                    print(f"Client {addr} removed. Active connections: {len(self.clients)}")
+        except ValueError:
+            print(f"Client {addr} already removed from active list")
+        finally:
+            try:
+                connectionSocket.close()
+            except:
+                pass
+            self.checkQueue()
 
         '''Test #3
         Does not work without queue'''

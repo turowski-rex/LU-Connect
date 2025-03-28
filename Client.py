@@ -37,6 +37,7 @@ class chatClient:
                 try:
                     _, username, password = message.split(maxsplit=2)
                     self.connectionSocket.send(f"LOGIN {username} {password}".encode())
+                    continue #wait for response before proceeding
 
                 except ValueError:
                     print("ValueError: #login username password")
