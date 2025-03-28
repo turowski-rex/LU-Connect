@@ -13,6 +13,9 @@ class chatClient:
         self.connectionSocket.connect((self.host, self.port))  # cnnect to server
         print("Connected to the chat server.")
 
+        self.loggedIn = False
+        print("Use #register username password or #login username password to proceeed.")
+
         threading.Thread(target=self.receiveMessages).start() # start thread to receive
         self.sendMessages()
 
@@ -22,6 +25,21 @@ class chatClient:
         while True:
             message = input()  #user input
             
+            if message.startswith("#register"):
+                _, username, password = message.split(maxsplit=2)
+                self.connectionSocket.send(f"REGISTER {username} {password}".encode())
+
+            elif message.startswith("#login"):
+                _, username, password = message.split(maxsplit=2)
+                self.connectionSocket.send(f"LOGIN {username} {password}".encode())
+
+            else:
+                if self.loggedIn:
+                    self.connectionSocket.send(message.encode())
+                else:
+                    print("Please log-in first.")
+
+
             if message == "#mute":
                 self.notification = False
                 print("Muted notifications.")

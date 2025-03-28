@@ -63,8 +63,25 @@ class chatServer:
                 message = connectionSocket.recv(1024).decode() # recv message from client (1Kb)
                 if not message:
                     break  # if message is empty, the client has disconnected
-                print(f"Received from {addr}: {message}")
-                self.broadcast(f"{addr}: {message}", connectionSocket)# broadcasting mesage to all cients
+
+                if message.startswith("REGISTER"):
+                    _, username, password = message.split(maxsplit=2)
+                    if self.register_user(username, password):
+                        connectionSocket.send("REGISTER_SUCCESS".encode())
+                    else:
+                        connectionSocket.send("REGISTER_FAIL".encode())
+
+                elif message.startswith("LOGIN"):
+                    _, username, password = message.split(maxsplit=2)
+                    if self.authenticate_user(username, password):
+                        connectionSocket.send("LOGIN_SUCCESS".encode())
+                        self.clients.append((connectionSocket, addr))
+                        print(f"User {username} logged in.")
+                    else:
+                     connectionSocket.send("LOGIN_FAIL".encode())
+
+                else:
+                    self.broadcast(f"{addr}: {message}", connectionSocket) # broadcast to all clients
 
             except ConnectionResetError: # when client window is closed
                 pass
@@ -112,6 +129,41 @@ class chatServer:
             Test #6 
             Just had to swap lines in Client = works'''
 
+    def registerUser(self, username, password):
+        conn = sqlite3.connect('users.db')
+        cursor = conn.cursor()
+        try:
+            # Check if user already exists
+            cursor.execute("SELECT username FROM users WHERE username=?", (username,))
+            if cursor.fetchone():
+                return False  # User exists
+            # Hash password
+            passwordHash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+            cursor.execute("INSERT INTO users VALUES (?, ?)", (username, passwordHash))
+            conn.commit()
+            return True
+        except Exception as e:
+            print(f"Registration error: {e}")
+            return False
+        finally:
+            conn.close()
+
+    def authenticateUser(self, username, password):
+        conn = sqlite3.connect('users.db')
+        cursor = conn.cursor()
+        try:
+            cursor.execute("SELECT passwordHash FROM users WHERE username=?", (username,))
+            result = cursor.fetchone()
+            if result:
+                stored_hash = result[0]
+                return bcrypt.checkpw(password.encode(), stored_hash)
+            return False
+        except Exception as e:
+            print(f"Authentication error: {e}")
+            return False
+        finally:
+            conn.close()
+
 def initDB():
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
@@ -123,6 +175,7 @@ def initDB():
     ''')
     conn.commit()
     conn.close()
+
 
 if __name__ =="__main__":
     server = chatServer()
