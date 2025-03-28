@@ -26,34 +26,37 @@ class chatClient:
             message = input()  #user input
             
             if message.startswith("#register"):
-                _, username, password = message.split(maxsplit=2)
-                self.connectionSocket.send(f"REGISTER {username} {password}".encode())
+                try:
+                    _, username, password = message.split(maxsplit=2)
+                    self.connectionSocket.send(f"REGISTER {username} {password}".encode())
+
+                except ValueError:
+                    print("ValueError: #register username passowrd")
 
             elif message.startswith("#login"):
-                _, username, password = message.split(maxsplit=2)
-                self.connectionSocket.send(f"LOGIN {username} {password}".encode())
+                try:
+                    _, username, password = message.split(maxsplit=2)
+                    self.connectionSocket.send(f"LOGIN {username} {password}".encode())
 
-            else:
-                if self.loggedIn:
-                    self.connectionSocket.send(message.encode())
-                else:
-                    print("Please log-in first.")
+                except ValueError:
+                    print("ValueError: #login username password")
 
-
-            if message == "#mute":
+            elif message == "#mute":
                 self.notification = False
                 print("Muted notifications.")
 
             elif message == "#unmute":
                 self.notification = True
                 print("Unmuted notifications.")
+            
+                '''Test #7 - mute/unmute works'''
 
             else:
-                try:
-                    self.connectionSocket.send(message.encode())  # send message to server
-                except Exception as e:
-                    print(f"Error sending message: {e}") # error handling
-                    break
+                if self.loggedIn:
+                    self.connectionSocket.send(message.encode()) # send message to server
+                else:
+                    print("Please log-in first.")
+                    '''Test #8 - reg/login blocks client from writing message'''
 
     def receiveMessages(self):
         # Continuously receive messages from the server
@@ -63,6 +66,9 @@ class chatClient:
                 if not message:
                     break  # If the message is empty, the server has disconnected
                 print(message)  # Print the received message
+
+                if message == "LOGIN_SUCCESS":
+                    self.loggedIn = True
 
                 if self.notification:
                     self.playNotification()

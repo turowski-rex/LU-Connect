@@ -2,7 +2,7 @@ import socket
 import threading
 import datetime
 import sqlite3
-import bcrypt
+
 
 class chatServer:
     '''WebServer architecture adapted from Networks and Systems module 
@@ -21,8 +21,7 @@ class chatServer:
         self.clients = [] # connected clients
         self.waitQueue = [] # clients waiting in queue
         
-        self.serverSocket.listen(100) # listening to connections
-
+        self.serverSocket.listen(10) # listening to connections
         print(f"Chat Server started on {self.host}:{self.port}. Max connections: {self.maxConnect}")
 
         ''' UNIT TEST #1 = check if server runs from terminal
@@ -66,16 +65,16 @@ class chatServer:
 
                 if message.startswith("REGISTER"):
                     _, username, password = message.split(maxsplit=2)
-                    if self.register_user(username, password):
+                    if self.registerUser(username, password):
                         connectionSocket.send("REGISTER_SUCCESS".encode())
                     else:
                         connectionSocket.send("REGISTER_FAIL".encode())
 
                 elif message.startswith("LOGIN"):
                     _, username, password = message.split(maxsplit=2)
-                    if self.authenticate_user(username, password):
+                    if self.authenticateUser(username, password):
                         connectionSocket.send("LOGIN_SUCCESS".encode())
-                        self.clients.append((connectionSocket, addr))
+                        
                         print(f"User {username} logged in.")
                     else:
                      connectionSocket.send("LOGIN_FAIL".encode())
@@ -130,51 +129,60 @@ class chatServer:
             Just had to swap lines in Client = works'''
 
     def registerUser(self, username, password):
-        conn = sqlite3.connect('users.db')
-        cursor = conn.cursor()
+        conn = None
         try:
+            conn = sqlite3.connect('users.db', check_same_thread=False)
+            cursor = conn.cursor()
+
             # Check if user already exists
             cursor.execute("SELECT username FROM users WHERE username=?", (username,))
             if cursor.fetchone():
                 return False  # User exists
-            # Hash password
-            passwordHash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-            cursor.execute("INSERT INTO users VALUES (?, ?)", (username, passwordHash))
+  
+            cursor.execute("INSERT INTO users VALUES (?, ?)", (username, password))
             conn.commit()
             return True
-        except Exception as e:
-            print(f"Registration error: {e}")
+        
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
             return False
+        
         finally:
-            conn.close()
+            if conn:
+                conn.close()
 
     def authenticateUser(self, username, password):
-        conn = sqlite3.connect('users.db')
-        cursor = conn.cursor()
+        conn = None
         try:
-            cursor.execute("SELECT passwordHash FROM users WHERE username=?", (username,))
+            conn = sqlite3.connect('users.db', check_same_thread=False)
+            cursor = conn.cursor()
+
+            cursor.execute("SELECT password FROM users WHERE username=?", (username,))
             result = cursor.fetchone()
-            if result:
-                stored_hash = result[0]
-                return bcrypt.checkpw(password.encode(), stored_hash)
+
+            if result and result[0] == password:
+                return True
             return False
-        except Exception as e:
-            print(f"Authentication error: {e}")
+        
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
             return False
         finally:
-            conn.close()
+            if conn:
+                conn.close()
 
 def initDB():
-    conn = sqlite3.connect('users.db')
+    conn = sqlite3.connect('users.db', check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             username TEXT PRIMARY KEY,
-            passwordHash TEXT NOT NULL
+            password TEXT NOT NULL
         )
     ''')
     conn.commit()
     conn.close()
+    print("Database initialized")
 
 
 if __name__ =="__main__":
