@@ -58,14 +58,16 @@ class chatServer:
     # Need to handle request for server not to crash
     def handleRequest(self, connectionSocket, addr):
         # Ref: https://www.geeksforgeeks.org/simple-chat-room-using-python/
+        # and: https://realpython.com/python-sockets/#running-the-multi-connection-client-and-server
         while True:
             try:
                 message = connectionSocket.recv(1024).decode() # recv message from client (1Kb)
                 if not message:
                     break  # if message is empty, the client has disconnected
-
+                
+                #messages to server about status
                 if message.startswith("REGISTER"):
-                    _, username, password = message.split(maxsplit=2)
+                    _, username, password = message.split(maxsplit=2) # getting username and passowrd
                     if self.registerUser(username, password):
                         connectionSocket.send("REGISTER_SUCCESS".encode())
                     else:
@@ -82,7 +84,7 @@ class chatServer:
 
                 else:
                     self.broadcast(f"{addr}: {message}", connectionSocket) # broadcast to all clients
-
+            #Socket handlin Ref: https://docs.python.org/3/library/socket.html
             except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError) as e:# when client window is closed
                 print(f"Client {addr} disconnected: {e}")
                 break
@@ -105,6 +107,7 @@ class chatServer:
             except:
                 pass
             self.checkQueue()
+        #Abrupt disconnection handling Ref: https://docs.python.org/3/library/threading.html#lock-objects
 
         '''Test #3
         Does not work without queue'''
